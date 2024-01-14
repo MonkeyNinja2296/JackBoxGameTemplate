@@ -6,6 +6,8 @@ let isClient = false;
 
 let onMobile = false;
 
+
+let round = 0;
 let prevMouseX = 0;
 let prevMouseY = 0;
 let hostButton;
@@ -13,7 +15,8 @@ let currentRoomCode = "";
 let inputCode;
 let nameInput;
 let sprites = [];
-let timer = 0
+let timer = -1;
+let setTimer = 80;
 
 class player{
   constructor(name, id, score){
@@ -54,6 +57,7 @@ async function setup() {
 }
 
 let txt;
+let topText;
 let tutorialDone = false;
 let tutorialStarted = false;
 async function draw(){
@@ -90,6 +94,15 @@ async function draw(){
       video.play()
       tutorialStarted = true;
     }
+    if(timer > 0){
+      text(Math.round(timer) + " ",25,25)
+      timer -= deltaTime/1000;
+    }
+    if(Math.round(timer) == 0){
+      // end of round
+      socket.emit("end round",currentRoomCode)
+      timer = -1;
+    }
   } else {
     rect(width/2-415/2,height/2-720/2,415,720)
   }
@@ -98,8 +111,9 @@ async function draw(){
   
   textAlign(CENTER);
   textSize(50)
-  text(txt, width/2, height/2)
-
+  text(txt, width/2-415/2, height/2, 415, 720)
+  text(topText, width/2-415/2, 50, 415)
+  
   if(!onMobile && touches.length > 0){
     onMobile = true;
   }
@@ -134,7 +148,7 @@ let submitButton;
 function createSubmitButton(){
     submitButton = createButton('SUBMIT');
     submitButton.size(100, 50);
-    submitButton.position(width/2 - 50, height/2 - 100);
+    submitButton.position(width/2 - 50, height/2 + 100);
     submitButton.mousePressed(() => {
     
 
@@ -156,7 +170,17 @@ function createStartButton(){
   });
 }
 
-
+let responceInput;
+function createInputResponce(){
+    responceInput = createInput('')
+    responceInput.size(200, 50);
+    responceInput.position(width/2 - 100, height/2 - 100);
+    responceInput.elt.placeholder = 'EX: Why did the chicken cross the road? Because his name was gary!';
+    responceInput.changed(() => {
+    responce = responceInput.value();
+    //removeElements();
+  })
+}
 function createInputCode(){
   inputCode = createInput('')
   inputCode.size(100, 50);
@@ -218,6 +242,23 @@ socket.on("start", function(){
     txt = "Wait for tutorial";
   }
 })
-socket.on("roundStart", function(){
-  
+socket.on("round start", function(){
+  round += 1;
+  if(!isHost){ 
+    topText = "Say a funny";
+    txt = "";
+    createSubmitButton()
+    createInputResponce()
+  }
+  if(isHost){
+    timer = setTimer;
+  }
+})
+socket.on("end round", function(){
+  if(!isHost){
+    console.log("end round")
+    socket.emit("save",responce,currentRoomCode, me.id);
+    topText = "";
+    txt = "Wait for voting to begin (or put into the game)"
+  }
 })

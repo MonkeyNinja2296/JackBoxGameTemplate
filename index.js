@@ -82,7 +82,10 @@ io.on("connect", function(socket) {
     io.in(code).emit("start");
   })
   socket.on("begin game", function(code){
-    io.in(code).emit("begin game");
+    io.in(code).emit("round start");
+  })
+  socket.on("end round", function(code){
+    io.in(code).emit("end round");
   })
 
 })
