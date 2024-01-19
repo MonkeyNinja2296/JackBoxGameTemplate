@@ -20,13 +20,6 @@ let rooms = [];
 
 
 
-function dothething(){
-  timesUpdated += 1
-
-
-}
-
-
 
 setInterval(function (){
   for(let i = 0; i < roomCodes.length; i++){
@@ -78,6 +71,9 @@ io.on("connect", function(socket) {
     console.log(code)
     io.in(code + " host").emit("thing", input, id)
   })
+  socket.on("prompt", function(prompt,code){
+    io.in(code).emit("prompt", prompt)
+  })
   socket.on("Start", function(code){
     io.in(code).emit("start");
   })
@@ -86,6 +82,22 @@ io.on("connect", function(socket) {
   })
   socket.on("end round", function(code){
     io.in(code).emit("end round");
+  });
+  socket.on("Vote", function(code,p1,p2){
+    io.in(code).emit("vote", p1, p2)
+  });
+  socket.on("vote", function(code,num,id,vote){
+    io.in(code + " host").emit("playerVoted", num, id,vote);
+  })
+  socket.on("score", function(code,id,score){
+    io.in(code).emit("playerScore", id, score);
+  })
+  socket.on("player information", function(code, player){
+    for(let i = 0; i < rooms.length; i++){
+      if(rooms[i].code == code){
+        rooms[i].players[player.id] = player;
+      }
+    }
   })
 
 })
