@@ -69,7 +69,7 @@ io.on("connect", function(socket) {
   })
   socket.on("save", function(input, code, id){
     console.log(code)
-    io.in(code + " host").emit("thing", input, id)
+    io.in(code + " host").emit("input", input, id)
   })
   socket.on("prompt", function(prompt,code){
     io.in(code).emit("prompt", prompt)
@@ -91,6 +91,9 @@ io.on("connect", function(socket) {
   })
   socket.on("score", function(code,id,score){
     io.in(code).emit("playerScore", id, score);
+  })
+  socket.on("show score", function(code){
+    io.in(code).emit("score time");
   })
   socket.on("player information", function(code, player){
     for(let i = 0; i < rooms.length; i++){

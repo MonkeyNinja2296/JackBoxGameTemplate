@@ -1,5 +1,5 @@
 const socket = io()
-const prompts = ["You have 6 words or less to make a group of people mad", "You are a fast food worker, and an angry customor is demanding a _____", "A stupid saying that only idiots say","What are some horrible names for a pet?", "You are selling a hole puncher door-to-door, what do you say to angry customors", "You are a teacher, and you need to name a student", "Last words before you spontainiously combust"];
+const prompts = ["You have 6 words or less to make a group of people mad", "You are a fast food worker, and an angry customor is demanding a _____", "A stupid saying that only idiots say","What are some horrible names for a pet?", "You are selling a hole puncher door-to-door, what do you say to angry customors", "You are a teacher, and you need to name a student", "Last words before you spontainiously combust","What do you say to your dog in the winter?","What would you name the secret code what would you name it?", "if grimmace walked up to you in an allyway what would you do?"];
 let letters =["a","b","c","d","e","f","g","h","i","j","k","l","m","o","p","q","r",
 "s","t","u","v","w","x","y","z"];
 let isHost = false;
@@ -33,7 +33,9 @@ let spriteOrder = [];
 let spritesToDraw = [];
 let responce = [];
 
-
+setInterval(() =>{
+  resizeCanvas(window.innerWidth, window.innerHeight);
+}, 1000)
 async function setup() {
   filter(BLUR, -100)
   createCanvas(window.innerWidth, window.innerHeight);
@@ -63,6 +65,7 @@ let txt;
 let topText;
 let tutorialDone = false;
 let tutorialStarted = false;
+let percentageOfScoreBar = 0;
 
 let playerOne = {text:""};
 let playerTwo = {text:""};
@@ -75,8 +78,9 @@ async function draw(){
   textSize(20)
 
   if(isHost){
-
+    fill('white')
     rect(0,0,w,h)
+    fill('black')
     if(votingTime){
       textSize(20)
       if(currentPrompt != -1){
@@ -129,13 +133,25 @@ async function draw(){
         }
       }
     }
-    if(Math.round(timer) == 0 && !votingTime){
-      console.log("")
+    if(scoreTime){
+      if(percentageOfScoreBar < 1){
+        percentageOfScoreBar += .01;
+      }
+      for(let i = 0; i < players.length; i++){
+        fill("green")
+        rect(w/8 * i, height - players[i].score*percentageOfScoreBar/(20000/h),50,players[i].score*percentageOfScoreBar/(20000/h))
+        spritesToDraw[i].position(w/8 * i, height - players[i].score*percentageOfScoreBar/(20000/h) - 50)
+      }
+    }
+    if(Math.round(timer) == 0 && !votingTime && !scoreTime){
+      
       
       // end of round
       socket.emit("end round",currentRoomCode)
       timer = -10;
-    } else if(Math.round(timer) == 0 && votingTime && curInput.length > 0){
+    } 
+    else if(Math.round(timer) == 0 && votingTime && curInput.length > 0 && !scoreTime){
+      
       timer = 20;
       if(currentPrompt != -1){
         socket.emit("score", currentRoomCode,playerOne.Pid,p1Votes)
@@ -148,7 +164,8 @@ async function draw(){
         curInput = []
         votingTime = false;
         currentPrompt = -1;
-        socket.emit("begin game",currentRoomCode)
+        socket.emit("show score",currentRoomCode)
+        percentageOfScoreBar = 0;
         timer = setTimer;
       } else {
         let p1 = null;
@@ -177,9 +194,15 @@ async function draw(){
         socket.emit("Vote",currentRoomCode,p1,p2)
       }
 
+    } 
+    else if(scoreTime && Math.round(timer) == 0){
+      timer = -11;
+      socket.emit("begin game",currentRoomCode)
+      curInput = [];
+      scoreTime = false;
     }
   } else {
-    rect(width/2-415/2,height/2-720/2,415,720)
+    rect(0,0,width,height)
   } 
 
 
@@ -261,7 +284,7 @@ function createStartButton(){
 
 let responceInput;
 function createInputResponce(){
-    responceInput = createInput('')
+    responceInput = createInput('').attribute('maxlength', 50)
     responceInput.size(200, 50);
     responceInput.position(width/2 - 100, height/2 - 100);
     responceInput.elt.placeholder = 'EX: Why did the chicken cross the road? Because his name was gary!';
@@ -281,7 +304,7 @@ function createInputCode(){
   })
 }
 function createNameInput(){
-    nameInput = createInput('')
+    nameInput = createInput('').attribute('maxlength', 30)
     nameInput.size(100, 50);
     nameInput.position(width/2 - 50, height/2 - 200);
     nameInput.elt.placeholder = 'EX: NAME';
@@ -292,8 +315,12 @@ function createNameInput(){
 }
 let votingTime = false;
 function voteBegin(){
-  votingTime = true;
-  timer = 0;
+  timer = -12;
+  setTimeout(() =>{
+    votingTime = true;
+    timer = 0;
+  },3000)
+  
   //socket.emit("vote begin",currentRoomCode);
 
 }
@@ -311,7 +338,7 @@ socket.on("id", function(number) {
   console.log(number)
   me.id = number;
   removeElements()
-  //createSubmitButton()
+  
   if(me.id == 0){
     createStartButton()
     txt = "Start the game when ready";
@@ -323,7 +350,7 @@ socket.on("Player info", function(info ){
   players = info;
 })
 let curInput = [];
-socket.on("thing", function(input,id){
+socket.on("input", function(input,id){
   console.log("Got input")
   curInput[id] = input;
   spritesToDraw[id].position(spritesToDraw[id].x, height/2)
@@ -339,6 +366,7 @@ socket.on("start", function(){
   }
 })
 let currentPrompts = []
+let promptNumbers = []
 socket.on("round start", function(){
   round += 1;
   txt = "";
@@ -349,8 +377,13 @@ socket.on("round start", function(){
 
     createSubmitButton()
     createInputResponce()
+    currentPrompts = [];
   }
   if(isHost){
+    promptNumbers = [];
+    for(let i = 0; i < players.length; i++){
+      promptNumbers.push([]);
+    }
     curInput = [];
     currentPrompts = [];
     for(let i = 0; i < spritesToDraw.length; i++){
@@ -376,6 +409,9 @@ socket.on("round start", function(){
       }
       playerTimes[p1] += 1
       playerTimes[p2] += 1
+      promptNumbers[p1].push(i)
+      promptNumbers[p2].push(i)
+      
       prompt.player1 = p1;
       prompt.player2 = p2;
       currentPrompts.push(prompt);
@@ -397,7 +433,7 @@ socket.on("end round", function(){
     socket.emit("save",responce,currentRoomCode, me.id);
     topText = "";
     currentPrompts = [];
-    txt = "Wait for voting to begin (or put into the game)"
+    txt = "Wait for voting to begin"
     removeElements()
   } else {
     voteBegin()
@@ -426,6 +462,12 @@ socket.on("vote", function(p1,p2){
       socket.emit("vote",currentRoomCode,2,me.id,votedBefore);
       votedBefore = 2;
     });
+  } else {
+    /*for(let i = 0; i < players.length; i++){
+      if(curInput[i] == null){
+        curInput[i] = [{text:"LOADING...",id:promptNumbers[i][0],Pid:i},{text:"LOADING...",id:promptNumbers[i][1],Pid:i}]
+      }
+    }*/
   }
 })
 
@@ -457,6 +499,17 @@ socket.on("playerVoted", function(player,id,prevVote){
 socket.on("playerScore", function(id, score){
   if(me.id == id){
     me.score += score*1000;
+  }
+
+})
+let scoreTime = false;
+socket.on("score time", function(){
+  if(isHost){
+    scoreTime = true;
+    timer = 20;
+  } else {
+    txt = "Score time!";
+    removeElements();
   }
 
 })
