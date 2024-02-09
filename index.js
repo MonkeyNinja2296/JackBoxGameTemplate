@@ -19,7 +19,17 @@ let rooms = [];
 
 
 
-
+setInterval(function(){
+  for(let i = 0; i < rooms.length; i++){
+    for(let j = 0; j < rooms[i].players.length; j++){
+      rooms[i].players[j].timeTillKill -= 1;
+      if(rooms[i].players[j].timeTillKill <= 0 && !rooms[i].gameStarted){
+        rooms[i].players.splice(j,1)
+        io.in(rooms[i].code).emit("changeID",j);
+      }
+    }
+  }
+}, 1000)
 
 setInterval(function (){
   for(let i = 0; i < roomCodes.length; i++){
@@ -71,10 +81,34 @@ io.on("connect", function(socket) {
     console.log(code)
     io.in(code + " host").emit("input", input, id)
   })
+  
+  socket.on("can reconect", function(person,code){
+    console.log(code)
+    for(let i = 0; i < rooms.length; i++){
+      if(rooms[i].code == code){
+        socket.emit("reconect")
+        socket.join(code);
+        break;
+      }
+    }
+  })
   socket.on("prompt", function(prompt,code){
     io.in(code).emit("prompt", prompt)
   })
+  socket.on("end game", function(code){
+    for(let i = 0; i < rooms.length; i++){
+      if(rooms[i].code == code){
+        rooms.Splice(i,1);
+        break;
+      }
+    }
+  })
   socket.on("Start", function(code){
+    for(let i = 0; i < rooms.length; i++){
+      if(rooms[i].code == code){
+        rooms[i].gameStarted = true;
+      }
+    }
     io.in(code).emit("start");
   })
   socket.on("begin game", function(code){
@@ -115,16 +149,19 @@ let posi = []
 
 
 class room{
-  constructor(host, code, players = []){
+  constructor(host, code, players = [], gameStarted = false){
     this.players = players;
     this.host = host;
     this.code = code
+    this.gameStarted = gameStarted;
   }
 }
 class player{
-  constructor(name, id, score){
+  constructor(name, id, score, timeTillKill){
     this.name = name;
     this.id = id;
     this.score = score;
+    this.timeTillKill = 10;
+    
   }  
 }

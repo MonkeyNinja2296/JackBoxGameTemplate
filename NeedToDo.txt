@@ -1,3 +1,1 @@
-Add player joining
-Add start game button 
-Add player number
+Add skip tutorial
