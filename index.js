@@ -95,10 +95,21 @@ io.on("connect", function(socket) {
   socket.on("prompt", function(prompt,code){
     io.in(code).emit("prompt", prompt)
   })
+  socket.on("skip", function(code){
+    io.in(code).emit("skip")
+  })
   socket.on("end game", function(code){
     for(let i = 0; i < rooms.length; i++){
       if(rooms[i].code == code){
-        rooms.Splice(i,1);
+        rooms.splice(i,1);
+      
+        break;
+      }
+    }
+    for(let i = 0; i < roomCodes.length; i++){
+      if(roomCodes == code){
+        roomCodes.splice(i,1);
+
         break;
       }
     }

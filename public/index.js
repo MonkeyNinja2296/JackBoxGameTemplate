@@ -284,6 +284,17 @@ function createSubmitButton() {
   });
 }
 
+function createSkipButton() {
+  submitButton = createButton('Skip tutorial');
+  submitButton.size(100, 50);
+  submitButton.position(width / 2 - 50, height / 2 + 100);
+  submitButton.mousePressed(() => {
+
+    socket.emit("skip", currentRoomCode);
+    removeElements()
+  });
+}
+
 let startButton;
 function createStartButton() {
   startButton = createButton('Start');
@@ -399,6 +410,9 @@ socket.on("start", function() {
   if (!isHost) {
     removeElements()
     txt = "Wait for tutorial";
+    if(me.id == 0){
+      createSkipButton();
+    }
   }
 })
 let currentPrompts = []
@@ -598,6 +612,15 @@ socket.on("reconect", function() {
     createSubmitButton()
     createInputResponce()
   }
+})
+
+
+socket.on("skip", function() {
+  if(isHost){
+    video.speed(5)
+    console.log(video.elt.duration);
+  }
+
 })
 
 setInterval(function() {
