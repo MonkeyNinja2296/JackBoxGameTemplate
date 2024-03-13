@@ -1,12 +1,20 @@
 const socket = io()
-const prompts = ["You have 6 words or less to make a group of people mad", "You are a fast food worker, and an angry customor is demanding a _____", "A stupid saying that only idiots say", "What are some horrible names for a pet?", "You are selling a hole puncher door-to-door, what do you say to angry customors", "You are a teacher, and you need to name a student", "Last words before you spontainiously combust", "What do you say to your dog in the winter?", "if grimmace walked up to you in an allyway what would you do?", "Braking news a Florida man ________ in the middle of a walmart", "You invented a new cheese called ______"];
+const prompts = ["You have 6 words or less to make a group of people mad", "You are a fast food worker, and an angry customor is demanding a _____", "A stupid saying that only idiots say", "What are some horrible names for a pet?", "You are selling a hole puncher door-to-door, what do you say to angry customors", "You are a teacher, and you need to name a student", "Last words before you spontainiously combust", "What do you say to your dog in the winter?", "if grimmace walked up to you in an allyway what would you do?", "Breaking news a Florida man ________ in the middle of a walmart", "You invented a new cheese called ______"];
 let letters = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "o", "p", "q", "r",
   "s", "t", "u", "v", "w", "x", "y", "z"];
 let isHost = false;
 let isClient = false;
 
 let onMobile = false;
+let lastDraw = false;
+let drawSize = 10;
+let drawColor = "red";
 
+let undoButton;
+
+
+let drawSlider;
+let drawSliderLastValue = 5;
 
 let round = 0;
 let prevMouseX = 0;
@@ -19,7 +27,7 @@ let sprites = [];
 let timer = -1;
 let setTimer = 80;
 
-
+let isInfluencing = false;
 
 let isDisconected = false;
 
@@ -44,9 +52,10 @@ let response = [];
 setInterval(() => {
   resizeCanvas(window.innerWidth, window.innerHeight);
 }, 1000)
+let cnv
 async function setup() {
   filter(BLUR, -100)
-  createCanvas(window.innerWidth, window.innerHeight);
+  cnv = createCanvas(window.innerWidth, window.innerHeight);
   background(153);
   textSize(40)
   let video;
@@ -79,8 +88,8 @@ let tutorialDone = false;
 let tutorialStarted = false;
 let percentageOfScoreBar = 0;
 
-let playerOne = { text: "" };
-let playerTwo = { text: "" };
+let playerOne = [];
+let playerTwo = [];
 
 
 async function draw() {
@@ -90,8 +99,8 @@ async function draw() {
   textSize(20)
 
   if (isHost) {
-    fill('white')
-    rect(0, 0, w, h)
+    
+    background('blue')
     fill('black')
     if (votingTime) {
       textSize(20)
@@ -99,9 +108,56 @@ async function draw() {
         text(currentPrompts[currentPrompt].text, width / 2, 100);
       }
       if (playerOne) {
-        text(playerOne.text, w / 3 - w / 5 / 2, 200, w / 5, 1000);
-        text(playerTwo.text, width / 1.5 - w / 5 / 2, 200, w / 5, 1000);
+        
+        strokeWeight(drawSize);
+        stroke(drawColor);
+        for (let i = 0; i < playerOne.length; i++) {
+          if (typeof playerOne[i] === 'object') {
+            
+            if (playerOne[i].a.x == playerOne[i].b.x && playerOne[i].a.y == playerOne[i].b.y) {
+              line(playerOne[i].a.x - 150, playerOne[i].a.y, playerOne[i].b.x -149, playerOne[i].b.y + 1)
+            }
+            line(playerOne[i].a.x - 150, playerOne[i].a.y, playerOne[i].b.x - 150, playerOne[i].b.y)
+          } else {
+
+            if (playerOne[i].substring(0, 2) == "sW") {
+              strokeWeight(playerOne[i].substring(parseInt(2)))
+            } else if(playerOne[i].substring(0,2) == "CC"){
+                noErase()
+                stroke(playerOne[i].substring(2))
+            } else if(playerOne[i] == "erase"){
+
+                erase()
+            }
+          }
+        }
+        noErase();
+        for (let i = 0; i < playerTwo.length; i++) {
+          if (typeof playerTwo[i] === 'object') {
+
+            if (playerTwo[i].a.x == playerTwo[i].b.x && playerTwo[i].a.y == playerTwo[i].b.y) {
+              line(playerTwo[i].a.x + 150, playerTwo[i].a.y, playerTwo[i].b.x + 151, playerTwo[i].b.y + 1)
+            }
+            line(playerTwo[i].a.x + 150, playerTwo[i].a.y, playerTwo[i].b.x + 150, playerTwo[i].b.y)
+          } else {
+
+            if (playerTwo[i].substring(0, 2) == "sW") {
+              strokeWeight(playerTwo[i].substring(parseInt(2)))
+            } else if(playerTwo[i].substring(0,2) == "CC"){
+                noErase()
+                stroke(playerTwo[i].substring(2))
+            } else if(playerTwo[i] == "erase"){
+
+                erase()
+            }
+          }
+        }
+        
       }
+      noErase()
+      
+      stroke("black")
+      strokeWeight(1)
     }
     for (let i = 0; i < players.length; i++) {
       //sprites[spriteOrder[i]].style('pagespeed_no_transform')
@@ -112,13 +168,7 @@ async function draw() {
       textAlign(LEFT);
       text(i + 1 + ". " + players[i].name, spritesToDraw[i].x, spritesToDraw[i].y);
     }
-    //Un-comment if you want this to be a drawing game 
-    /*for(let j = 0; j < curInput.length; j++){
-      for(let i = 0; i < curInput[j].length; i++){
-        line(curInput[j][i].a.x/5 + (width/8)*j,curInput[j][i].a.y/5,
-             curInput[j][i].b.x/5 + (width/8)*j,curInput[j][i].b.y/5)
-      }
-    }*/
+    
 
     if (tutorialStarted == false && theGameHasBegun) {
       video = createVideo('Videos/example.mp4').size(w, h).position(0, 0).onended(() => {
@@ -158,19 +208,31 @@ async function draw() {
         spritesToDraw[i].position(w / 8 * i, height - players[i].score * percentageOfScoreBar / (20000 / h) - 50)
       }
     }
-    if (Math.round(timer) == 0 && !votingTime && !scoreTime) {
+    if (Math.round(timer) == 0 && !votingTime && !scoreTime && !isInfluencing) {
 
-
+      isInfluencing = true;
       // end of round
-      socket.emit("end round", currentRoomCode)
-      timer = -10;
+      setTimeout(() => {
+        let arrs = [players.length-1];
+        for (let i = 0; i < players.length-1; i++){
+          arrs.push(i)
+        }
+        socket.emit("influence", currentRoomCode, curInput,arrs)
+        console.log("influence");
+        curInput = [];
+        
+        for (let i = 0; i < spritesToDraw.length; i++) {
+          spritesToDraw[i].position(width / players.length * i, height - 150)
+        }
+      },3000)
+      timer = -11;
     }
     else if (Math.round(timer) == 0 && votingTime && curInput.length > 0 && !scoreTime) {
 
       timer = 20;
       if (currentPrompt != -1) {
-        socket.emit("score", currentRoomCode, playerOne.Pid, p1Votes)
-        socket.emit("score", currentRoomCode, playerTwo.Pid, p2Votes)
+        socket.emit("score", currentRoomCode, parseInt(playerOne[playerOne.length-1].substring(2)), p1Votes)
+        socket.emit("score", currentRoomCode, parseInt(playerTwo[playerTwo.length-1].substring(2)), p2Votes)
       }
 
       currentPrompt++;
@@ -186,22 +248,25 @@ async function draw() {
         let p1 = null;
         let p2;
         for (let i = 0; i < curInput.length; i++) {
-          console.log(i);
-          if (curInput[i][0].id == currentPrompt) {
-            if (p1 == null) {
-              p1 = curInput[i][0];
-            } else {
-              p2 = curInput[i][0];
-            }
-          }
-
-          if (curInput[i][1].id == currentPrompt) {
+          console.log(curInput[i]);
+          if (curInput[i][0][0].id == currentPrompt) {
             if (p1 == null) {
               p1 = curInput[i][1];
+              p2 = [];
+              for(let i = 0; i < p1.length; i++){
+                if (typeof p1[i] != 'object' && p1[i].substring(0, 2) == "me"){
+                  p2.push(p1[i])
+                  break;
+                } else {
+                  p2.push(p1[i])
+                }
+              }
             } else {
               p2 = curInput[i][1];
             }
           }
+
+          
         }
         console.log(p1)
         playerOne = p1;
@@ -215,8 +280,14 @@ async function draw() {
       socket.emit("begin game", currentRoomCode)
       curInput = [];
       scoreTime = false;
+    } else if(Math.round(timer) == 0 && !votingTime && !scoreTime && isInfluencing){
+      isInfluencing = false;
+      // end of round
+      socket.emit("end round", currentRoomCode)
+      timer = -10;
     }
   } else {
+    fill("white")
     rect(0, 0, width, height)
   }
 
@@ -238,17 +309,90 @@ async function draw() {
   if (!onMobile && touches.length > 0) {
     onMobile = true;
   }
-
-  strokeWeight(10);
-  if (mouseIsPressed) {
-    stroke('red');
-    line(mouseX, mouseY, prevMouseX, prevMouseY)
-    //uncomment below if you want it to be a drawing game
-    //response.push({a:{x:mouseX,y:mouseY},b:{x:prevMouseX,y:prevMouseY}})
+  if (isHost || submitButton == null) {
+    return;
   }
+  cnv.touchStarted(() => {
+
+    lastDraw = false;
+    prevMouseX = 0;
+    prevMouseY = 0;
+
+  })
+  cnv.touchEnded(() => {
+
+    lastDraw = true;
+  })
+
+  if (drawSlider) {
+    drawSize = drawSlider.value();
+    if (drawSize != drawSliderLastValue) {
+      response.push("sW" + drawSize)
+    } else if (response.length == 0) {
+      response.push("sW" + drawSize)
+    }
+  }
+  if (response[response.length - 1] != "END" &&
+             typeof response[response.length -1] === 'object' && !mouseIsPressed) {
+    response.push("END");
+  }
+  if (lastDraw) {
+
+
+  } else {
+    
+
+    strokeWeight(drawSize);
+    fill(drawColor)
+    
+    if (mouseIsPressed) {
+      stroke(drawColor);
+      if (mouseX > w / 2 + 150 || mouseX < w / 2 - 150 || mouseY > h / 2 + 75 || mouseY < h / 2 - 225 || prevMouseX > w / 2 + 150 || prevMouseX < w / 2 - 150 || prevMouseY > h / 2 + 75 || prevMouseY < h / 2 - 225) {
+        console.log("No draw")
+      } else {
+
+        line(mouseX, mouseY, prevMouseX, prevMouseY)
+        //uncomment below if you want it to be a drawing game
+        response.push({ a: { x: mouseX, y: mouseY }, b: { x: prevMouseX, y: prevMouseY } })
+      }
+    } 
+  }
+  stroke("green")
+  strokeWeight(3);
+  fill("white")
+  rect(w / 2 - 150, h / 2 - 225, 300, 300);
+  strokeWeight(drawSize);
+  stroke(drawColor);
+  for (let i = 0; i < response.length; i++) {
+    if (typeof response[i] === 'object') {
+      if (response[i].a.x == response[i].b.x && response[i].a.y == response[i].b.y) {
+        line(response[i].a.x, response[i].a.y, response[i].b.x + 1, response[i].b.y + 1)
+      }
+      line(response[i].a.x, response[i].a.y, response[i].b.x, response[i].b.y)
+    } else {
+    
+      if (response[i].substring(0, 2) == "sW") {
+        strokeWeight(response[i].substring(parseInt(2)))
+        
+      } else if(response[i].substring(0,2) == "CC"){
+          noErase();
+          stroke(response[i].substring(2))
+      } else if(response[i] == "erase"){
+
+          erase()
+      }
+
+    }
+  }
+  noErase();
   strokeWeight(1);
+
   prevMouseX = mouseX;
   prevMouseY = mouseY;
+  if (drawSlider) {
+    drawSliderLastValue = drawSlider.value();
+  }
+
 }
 
 function createHostButton() {
@@ -271,16 +415,27 @@ function createSubmitButton() {
   submitButton.size(100, 50);
   submitButton.position(width / 2 - 50, height / 2 + 100);
   submitButton.mousePressed(() => {
-
-    if (currentPrompts.length > 0) {
-
-      response.push({ text: responseInput.value(), id: currentPrompts[0].id, Pid: me.id })
-      currentPrompts.splice(0, 1);
-      responseInput.value("");
-    } if (currentPrompts.length == 0) {
-      socket.emit("save", response, currentRoomCode, me.id);
+      let j = width/2-150
+      let i = height/2 -225
+      response.push("x" + j)
+      response.push("y" + i)
+      response.push("me" + me.id)
+      console.log(response);
+      socket.emit("save", response, currentRoomCode, me.id, currentPrompts);
       removeElements()
-    }
+      responce = [];
+    
+  });
+}
+function createEraserButton() {
+  submitButton = createButton('ERASE');
+  submitButton.size(50, 50);
+  submitButton.position(width / 2 + 50, height / 2 - 275);
+  submitButton.mousePressed(() => {
+
+
+      response.push("erase")
+
   });
 }
 
@@ -307,6 +462,19 @@ function createStartButton() {
     removeElements()
   });
 }
+function createSizeSlider() {
+  drawSlider = createSlider(1, 10, 5, 1)
+  drawSlider.position(width / 2 - 150, height / 2 - 250).size(80)
+}
+let colorPicker;
+function createColorGrab() {
+  console.log("Is the color picker created?")
+  colorPicker = createColorPicker('deeppink');
+  colorPicker.position(width / 2 - 50, height / 2 - 250).size(80)
+  colorPicker.changed(() => {
+      response.push("CC" + colorPicker.value());
+    });
+}
 let reconectButton;
 function createReconectButton() {
   reconectButton = createButton('Re-connect');
@@ -317,6 +485,29 @@ function createReconectButton() {
 
     socket.emit("can reconect", me, tempMe[1]);
 
+  });
+}
+
+
+function createUndoButton() {
+  undoButton = createButton('↩️');
+  undoButton.size(50, 50);
+  undoButton.position(width / 2 + 100, height / 2 - 275);
+  undoButton.mousePressed(() => {
+    let foundFirst = false;
+    for (let i = response.length - 1; i >= 0; i--) {
+      if (response[i] == "END" && !foundFirst) {
+        foundFirst = true;
+
+      } else if (response[i] == "END" && foundFirst) {
+        response.push("sW" + drawSlider.value());
+        break;
+      }
+      if (foundFirst) {
+        response.splice(i, 1);
+
+      }
+    }
   });
 }
 
@@ -372,6 +563,8 @@ function voteBegin() {
 
 
 
+
+
 socket.on("room code", function(number) {
   currentRoomCode = number;
   storeItem('me', [me, currentRoomCode])
@@ -396,9 +589,12 @@ socket.on("Player info", function(info) {
   players = info;
 })
 let curInput = [];
-socket.on("input", function(input, id) {
+socket.on("input", function(input, id, prompt) {
   console.log("Got input")
-  curInput[id] = input;
+  curInput[id] = []
+  curInput[id][0] = prompt
+  curInput[id][0][0].Pid = id;
+  curInput[id][1] = input;
   spritesToDraw[id].position(spritesToDraw[id].x, height / 2)
 
 
@@ -410,7 +606,7 @@ socket.on("start", function() {
   if (!isHost) {
     removeElements()
     txt = "Wait for tutorial";
-    if(me.id == 0){
+    if (me.id == 0) {
       createSkipButton();
     }
   }
@@ -419,7 +615,7 @@ let currentPrompts = []
 let promptNumbers = []
 socket.on("round start", function() {
   round++;
-  if(round >= 3){
+  if (round >= 3) {
     socket.emit("end game", currentRoomCode);
     txt = "GAME DONE";
     return;
@@ -431,15 +627,19 @@ socket.on("round start", function() {
     removeElements();
 
     createSubmitButton()
-    createInputResponce()
+    createSizeSlider()
+    createUndoButton()
+    createColorGrab() 
+    createEraserButton()
+
     currentPrompts = [];
     me.CP = currentPrompts;
-    storeItem('me',[me,currentRoomCode])
+    storeItem('me', [me, currentRoomCode])
   }
   if (isHost) {
     promptNumbers = [];
     for (let i = 0; i < players.length; i++) {
-      promptNumbers.push([]);
+      promptNumbers.push(i);
     }
     curInput = [];
     currentPrompts = [];
@@ -447,30 +647,16 @@ socket.on("round start", function() {
       spritesToDraw[i].position(width / players.length * i, height - 150)
     }
     timer = setTimer;
-    let playerTimes = []
+    
     for (let i = 0; i < players.length; i++) {
-      playerTimes[i] = 0;
-    }
-    for (let i = 0; i < players.length; i++) {
-      console.log(playerTimes)
-      let prompt = { text: random(prompts), id: i, player1: 0, player2: 0 }
-      let p1 = Math.floor(random(0, players.length));
-      let p2 = Math.floor(random(0, players.length));
-      while (p2 == p1) {
-        p2 = Math.floor(random(0, players.length));
-      }
-      if (playerTimes[p2] == 2 || playerTimes[p1] == 2) {
-        i--;
-        console.log(i)
-        continue;
-      }
-      playerTimes[p1] += 1
-      playerTimes[p2] += 1
-      promptNumbers[p1].push(i)
-      promptNumbers[p2].push(i)
+      
+      let prompt = { text: random(prompts), id: i, player1: i, player2: 0 }
+      
+      
+      
+      
 
-      prompt.player1 = p1;
-      prompt.player2 = p2;
+      
       currentPrompts.push(prompt);
       socket.emit("prompt", prompt, currentRoomCode)
 
@@ -487,11 +673,11 @@ socket.on("end round", function() {
       response.push({ text: responseInput.value(), id: currentPrompts[0].id, Pid: me.id });
       currentPrompts.splice(0, 1);
     }
-    socket.emit("save", response, currentRoomCode, me.id);
+    socket.emit("save", response, currentRoomCode, me.id, currentPrompts);
     topText = "";
     currentPrompts = [];
     me.CP = currentPrompts;
-    storeItem('me',[me,currentRoomCode])
+    storeItem('me', [me, currentRoomCode])
     txt = "Wait for voting to begin"
     removeElements()
   } else {
@@ -515,14 +701,14 @@ socket.on("vote", function(p1, p2) {
   if (!isHost) {
     currentPrompts = [];
     me.CP = currentPrompts;
-    storeItem('me',[me,currentRoomCode])
+    storeItem('me', [me, currentRoomCode])
     txt = "";
     removeElements();
-    voteButton1 = createButton(p1.text).position(0, height / 4).size(width, 100).mousePressed(() => {
+    voteButton1 = createButton("LEFT").position(0, height / 4).size(width, 100).mousePressed(() => {
       socket.emit("vote", currentRoomCode, 1, me.id, votedBefore);
       votedBefore = 1;
     });
-    voteButton2 = createButton(p2.text).position(0, height / 4 + 105).size(width, 100).mousePressed(() => {
+    voteButton2 = createButton("RIGHT").position(0, height / 4 + 105).size(width, 100).mousePressed(() => {
 
       socket.emit("vote", currentRoomCode, 2, me.id, votedBefore);
       votedBefore = 2;
@@ -608,17 +794,46 @@ socket.on("reconect", function() {
   theGameHasBegun = true;
   currentPrompts = me.CP;
   currentRoomCode = tempMe[1];
-  if(me.CP[0]){
+  if (me.CP[0]) {
     createSubmitButton()
-    createInputResponce()
+    createSizeSlider()
+    createUndoButton()
+    createColorGrab()
+    createEraserButton()
+
   }
 })
 
 
 socket.on("skip", function() {
-  if(isHost){
+  if (isHost) {
     video.speed(5)
     console.log(video.elt.duration);
+  }
+
+})
+
+socket.on("influence", function(input, arr) {
+  if (!isHost) {
+    response = input[arr[me.id]][1]
+    console.log(response);
+    let y = parseInt(response.splice(createInputResponce.length-2).substring(1))
+    let x = parseInt(response.splice(createInputResponce.length-2).substring(1))
+    for(let i = 0; i < response.length; i++){
+      if(typeof response[i] === 'object'){
+        response[i].a.x -= x;
+        response[i].a.y -= y;
+        response[i].b.x -= x;
+        response[i].b.y -= y;
+      }
+    }
+    createSubmitButton()
+    createSizeSlider()
+    createUndoButton()
+    createColorGrab()
+    createEraserButton()
+  } else {
+    timer = 80;
   }
 
 })

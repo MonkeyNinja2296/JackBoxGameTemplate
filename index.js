@@ -32,6 +32,7 @@ setInterval(function(){
 }, 1000)
 
 setInterval(function (){
+  
   for(let i = 0; i < roomCodes.length; i++){
     io.in(roomCodes[i] + " host").emit("Player info",rooms[i].players)
   }
@@ -75,13 +76,13 @@ io.on("connect", function(socket) {
 
 
     io.in(code).emit("room code", code);
-    
+
   })
-  socket.on("save", function(input, code, id){
+  socket.on("save", function(input, code, id, prompts){
     console.log(code)
-    io.in(code + " host").emit("input", input, id)
+    io.in(code + " host").emit("input", input, id, prompts)
   })
-  
+
   socket.on("can reconect", function(person,code){
     console.log(code)
     for(let i = 0; i < rooms.length; i++){
@@ -95,6 +96,9 @@ io.on("connect", function(socket) {
   socket.on("prompt", function(prompt,code){
     io.in(code).emit("prompt", prompt)
   })
+  socket.on("influence", function(code,input,arr){
+    io.in(code).emit("influence", input,arr)
+  })
   socket.on("skip", function(code){
     io.in(code).emit("skip")
   })
@@ -102,8 +106,9 @@ io.on("connect", function(socket) {
     for(let i = 0; i < rooms.length; i++){
       if(rooms[i].code == code){
         rooms.splice(i,1);
-      
-        break;
+        roomCodes.splice(i,1);
+
+
       }
     }
     for(let i = 0; i < roomCodes.length; i++){
@@ -173,6 +178,6 @@ class player{
     this.id = id;
     this.score = score;
     this.timeTillKill = 10;
-    
+
   }  
 }
