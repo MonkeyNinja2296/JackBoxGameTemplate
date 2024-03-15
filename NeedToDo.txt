@@ -1,1 +1,2 @@
-Add skip tutorial
+Reconnecting works
+Correct promt on showing
