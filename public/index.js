@@ -1,8 +1,10 @@
+
+
 const socket = io()
 //I con't get the server to run. IDK what to do.
 
 const prompts = ["Grimmace in the alley way with you", "croissant", "your mom", "a weapon of mass destruction", "Draw yourself as a fairy", "Draw the protagnist for an indie puzzle game about Hamburgers", "draw the last item you purchased", "Draw a picture of your favorite U.S president breaking a stupid law", "draw a pair of sinners running while holding scissors the wrong way", "Draw a fast food mascot kidnapping rabbits from an orphanage", "A bottle filled with something that makes you happy", "Something inside a heart", "Draw your name as an animal.", "Draw a can of soda pouring out rainbows.", "Draw a can of soda pouring out rainbows.", "Draw the moon howling at a wolf.", "Draw a mythical creature cowering in fear from the IRS because they committed tax evasion", "Something that scares you", "Draw a pair of scissors running.", "draw a character from that last media you consumed from memory", "Draw something other than a pot of gold at the end of the rainbow.", "A rabbit with long legs", "Draw a bowl of cereal under the sea.", "a legs with long rabbit", "Draw a cactus in a milkshake.", "Draw the moon fighting the sun over a turkey sandwich.", "Draw a design for a $3 bill.", "Draw a stick figure doing a backflip over a vegetable 10x his size", "Draw an apple talking to your art teacher.", "Draw chicken wings flying.", "Draw a teacher eating pizza while dancing.", "an odd pose.", "Draw a bicycle riding a bicycle.", "Draw the crowd.", "Draw a pair of shoes made out of flowers.", "Draw Grant. In the most abstract way possible", "Draw an apple talking to your art teacher.", "Draw a rainstorm of sprinkles.", "Draw an animal taking a human for a walk.", "Combine two holidays to make a new one.", "Draw the Eiffel Tower eating a baguette.", "Draw a stick figure falling.", "a twelve item menu.", "Draw a treasure chest in an underground cave.", "Draw what is in the rearview mirror of the car.", "Draw a fish swimming in something other than water.", "Draw 3 essential items that you would use while being chased by the Mafia", "Draw a dragon breathing rainbows.", "Draw five objects with interesting textures", "Draw a troll riding a unicorn.", "Draw a foot doing a handstand.", "Draw all the contents of your junk drawer with one continuous line.", "Draw a sweater made out of candy.", "Draw a super scary Valentine’s Day card.", "Draw the funniest U.S President inside of the universe of a Shakespeare Play", "Draw a snowman sailing.", "Make a drawing that looks sticky.", "Yo wtf I keep getting spammed", "Draw lightning striking the tallest building in the world.", "Draw what’s under your bed", "Draw something you keep putting off, or something that causes you to procrastinate.", "Draw Misty(Grants Cat), misty stepping into a deep mist, of wistful creatures", "How many prompts do you guys need??????", "I need to silence this server one sec", "Oh goodness", "Draw thats a good one", "A pirate trying to sword fight with a", "A giant pickle taking over the tri state area"];
-let influnetialPrompts = ["make is look like a pirate"]
+let influnetialPrompts = ["make it look like a pirate"]
 let letters = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "o", "p", "q", "r",
   "s", "t", "u", "v", "w", "x", "y", "z"];
 // I am having a hard time right now AHHHHHHHHHHHHH sotp failing please
@@ -92,8 +94,8 @@ let tutorialDone = false;
 let tutorialStarted = false;
 let percentageOfScoreBar = 0;
 
-let playerOne = [];
-let playerTwo = [];
+let playerOne = null;
+let playerTwo = null;
 
 
 async function draw() {
@@ -109,10 +111,11 @@ async function draw() {
     if (votingTime) {
       textSize(20)
       if (currentPrompt != -1) {
+        textAlign(CENTER);
         if (currentPrompt == 0) {
-          text(currentPrompts[currentPrompts.length - 1].text, width / 2, 100);
+          text(currentPrompts[currentPrompts.length - 1].text, 0, 100, width);
         } else {
-          text(currentPrompts[currentPrompt - 1].text, width / 2, 100);
+          text(currentPrompts[currentPrompt - 1].text, 0, 100, width);
         }
       }
       if (playerOne) {
@@ -188,15 +191,16 @@ async function draw() {
       tutorialStarted = true;
     }
     if (timer > 0) {
-      text(Math.round(timer) + " ", w / 2, 25)
+      textAlign(CENTER);
+      text(Math.round(timer) + " ", 0, 25, w)
       timer -= deltaTime / 1000;
       if (timer < 0) {
         timer = 0;
       }
-      if (curInput.length == players.length && !votingTime) {
+      if (finalInputs.length == players.length && !votingTime) {
         let everyOneSubbmitted = true
-        for (let i = 0; i < curInput.length; i++) {
-          if (!curInput[i]) {
+        for (let i = 0; i < finalInputs.length; i++) {
+          if (!finalInputs[i]) {
             everyOneSubbmitted = false;
             break;
           }
@@ -220,15 +224,17 @@ async function draw() {
 
       isInfluencing = true;
       // end of round
+      socket.emit("Y'all should save", currentRoomCode)
       setTimeout(() => {
         let arrs = [players.length - 1];
         for (let i = 0; i < players.length - 1; i++) {
           arrs.push(i)
         }
+        console.log(curInput)
         socket.emit("influence", currentRoomCode, curInput, arrs)
         console.log("influence");
         curInput = [];
-
+        finalInputs = [];
         for (let i = 0; i < spritesToDraw.length; i++) {
           spritesToDraw[i].position(width / players.length * i, height - 150)
         }
@@ -238,7 +244,7 @@ async function draw() {
     else if (Math.round(timer) == 0 && votingTime && curInput.length > 0 && !scoreTime) {
 
       timer = 20;
-      if (currentPrompt != -1) {
+      if (currentPrompt != -1 && playerOne) {
         socket.emit("score", currentRoomCode, parseInt(playerOne[playerOne.length - 1].substring(2)), p1Votes)
         socket.emit("score", currentRoomCode, parseInt(playerTwo[playerTwo.length - 1].substring(2)), p2Votes)
       }
@@ -247,16 +253,18 @@ async function draw() {
 
       if (currentPrompt >= players.length) {
         curInput = []
+        finalInputs = [];
         votingTime = false;
         currentPrompt = -1;
         socket.emit("show score", currentRoomCode)
         percentageOfScoreBar = 0;
         timer = setTimer;
       } else {
+
         let p1 = null;
         let p2;
         for (let i = 0; i < curInput.length; i++) {
-          console.log(curInput[i]);
+          
           if (curInput[i][0][0].id == currentPrompt) {
             if (p1 == null) {
               p1 = curInput[i][1];
@@ -289,6 +297,11 @@ async function draw() {
 
         }
         console.log(p1)
+        if (!p1) {
+          currentPrompt++;
+          timer = 0;
+          return;
+        }
         playerOne = p1;
         playerTwo = p2;
         socket.emit("Vote", currentRoomCode, p1, p2)
@@ -315,7 +328,8 @@ async function draw() {
 
   textAlign(CENTER);
   textSize(50)
-  text(txt, width / 2 - 415 / 2, height / 2, 415, 720)
+  fill("black")
+  text(txt, 0, height / 2, width, height / 2)
   if (!isHost) {
     if (currentPrompts.length > 0) {
       topText = currentPrompts[0].text;
@@ -325,9 +339,9 @@ async function draw() {
   }
   textSize(20)
   if (height / 2 - 325 < 0) {
-    text(topText, width / 2 - 415 / 2, 20, 415)
+    text(topText, 0, 0, width)
   } else {
-    text(topText, width / 2 - 415 / 2, height / 2 - 325, 415)
+    text(topText, 0, height / 2 - 325, width)
   }
 
   if (!onMobile && touches.length > 0) {
@@ -434,19 +448,20 @@ function createHostButton() {
   });
 }
 let submitButton;
-
+let pressedSubmitButton = false
 function createSubmitButton() {
   submitButton = createButton('SUBMIT');
   submitButton.size(100, 50);
   submitButton.position(width / 2 - 50, height / 2 + 100);
   submitButton.mousePressed(() => {
+    pressedSubmitButton = true;
     let j = width
     let i = height
     response.push("x" + j)
     response.push("y" + i)
     response.push("me" + me.id)
     console.log(response);
-    socket.emit("save", response, currentRoomCode, me.id, currentPrompts);
+    socket.emit("save", response, currentRoomCode, me.id, currentPrompts, true);
     removeElements()
     responce = [];
 
@@ -571,6 +586,7 @@ function createNameInput() {
 let votingTime = false;
 function voteBegin() {
   timer = -12;
+  socket.emit("Y'all should save", currentRoomCode);
   setTimeout(() => {
     votingTime = true;
     timer = 0;
@@ -592,7 +608,18 @@ function voteBegin() {
 
 socket.on("room code", function(number) {
   currentRoomCode = number;
-  storeItem('me', [me, currentRoomCode,response])
+  storeItem('me', [me, currentRoomCode, response])
+})
+socket.on("save now", function() {
+  if (!isHost) {
+    let j = width
+    let i = height
+    response.push("x" + j)
+    response.push("y" + i)
+    response.push("me" + me.id)
+    console.log(response);
+    socket.emit("save", response, currentRoomCode, me.id, currentPrompts, false);
+  }
 })
 socket.on("room not found", function(number) {
   console.log("Room not found")
@@ -600,9 +627,9 @@ socket.on("room not found", function(number) {
 socket.on("id", function(number) {
   console.log(number)
   me.id = number;
-  storeItem('me', [me, currentRoomCode,response])
+  storeItem('me', [me, currentRoomCode, response])
   removeElements()
-  topText = "wait for game to begin"
+  txt = "wait for game to begin"
 
   if (me.id == 0) {
     createStartButton()
@@ -615,21 +642,27 @@ socket.on("Player info", function(info) {
   players = info;
 })
 let curInput = [];
-socket.on("input", function(input, id, prompt) {
+let finalInputs = [];
+socket.on("input", function(input, id, prompt, isGood) {
   console.log("Got input")
   curInput[id] = []
   curInput[id][0] = prompt
-  curInput[id][0][0].Pid = id;
+  console.log(isGood)
+  if (isGood) {
+    finalInputs[id] = true;
+    spritesToDraw[id].position(spritesToDraw[id].x, height / 2)
+  }
+
 
   curInput[id][1] = input;
-  spritesToDraw[id].position(spritesToDraw[id].x, height / 2)
+
 
 
 })
 let theGameHasBegun = false;
 socket.on("start", function() {
   theGameHasBegun = true;
-  storeItem('me', [me, currentRoomCode,response]);
+  storeItem('me', [me, currentRoomCode, response]);
   if (!isHost) {
     removeElements()
     txt = "Wait for tutorial";
@@ -642,12 +675,12 @@ let currentPrompts = []
 let promptNumbers = []
 socket.on("round start", function() {
   round++;
-  if (round >= 3) {
+  if (round >= 4) {
     socket.emit("end game", currentRoomCode);
     txt = "GAME DONE";
     return;
   }
-  txt = "";  
+  txt = "";
   if (!isHost) {
     //topText = "Say a funny";
     response = [];
@@ -661,14 +694,16 @@ socket.on("round start", function() {
 
     currentPrompts = [];
     me.CP = currentPrompts;
-    storeItem('me', [me, currentRoomCode,response])
+    storeItem('me', [me, currentRoomCode, response])
   }
   if (isHost) {
+
     promptNumbers = [];
     for (let i = 0; i < players.length; i++) {
       promptNumbers.push(i);
     }
     curInput = [];
+    finalInputs = [];
     currentPrompts = [];
     for (let i = 0; i < spritesToDraw.length; i++) {
       spritesToDraw[i].position(width / players.length * i, height - 150)
@@ -688,7 +723,7 @@ socket.on("round start", function() {
       socket.emit("prompt", prompt, currentRoomCode)
 
 
-
+      
     }
 
   }
@@ -696,20 +731,21 @@ socket.on("round start", function() {
 socket.on("end round", function() {
   if (!isHost) {
     console.log("end round")
-    
+
     let j = width
     let i = height
     response.push("x" + j)
     response.push("y" + i)
     response.push("me" + me.id)
     console.log(response);
-    socket.emit("save", response, currentRoomCode, me.id, currentPrompts);
-   
+    socket.emit("save", response, currentRoomCode, me.id, currentPrompts, true);
+
+
     responce = [];
     topText = "";
-    currentPrompts = [];
+
     me.CP = currentPrompts;
-    storeItem('me', [me, currentRoomCode,response])
+    storeItem('me', [me, currentRoomCode, response])
     txt = "Wait for voting to begin"
     removeElements()
   } else {
@@ -722,7 +758,7 @@ socket.on("prompt", function(prompt) {
   if (prompt.player1 == me.id || prompt.player2 == me.id) {
     currentPrompts.push(prompt);
     me.CP = currentPrompts;
-    storeItem('me', [me, currentRoomCode,response]);
+    storeItem('me', [me, currentRoomCode, response]);
   }
 })
 let voteButton1
@@ -733,7 +769,7 @@ socket.on("vote", function(p1, p2) {
   if (!isHost) {
     currentPrompts = [];
     me.CP = currentPrompts;
-    storeItem('me', [me, currentRoomCode,response])
+    storeItem('me', [me, currentRoomCode, response])
     txt = "";
     removeElements();
     voteButton1 = createButton("LEFT").position(0, height / 4).size(width, 100).mousePressed(() => {
@@ -786,7 +822,7 @@ socket.on("playerScore", function(id, score) {
   if (me.id == id) {
     me.score += score * 1000;
   }
-  storeItem('me', [me, currentRoomCode,response])
+  storeItem('me', [me, currentRoomCode, response])
 })
 let scoreTime = false;
 socket.on("score time", function() {
@@ -826,7 +862,7 @@ socket.on("reconect", function() {
   theGameHasBegun = true;
   currentPrompts = me.CP;
   currentRoomCode = tempMe[1];
-  
+
   if (me.CP[0]) {
     response = tempMe[2]
     createSubmitButton()
@@ -849,9 +885,10 @@ socket.on("skip", function() {
 
 socket.on("influence", function(input, arr) {
   if (!isHost) {
+    console.log(input);
     response = input[arr[me.id]][1]
-    console.log(response);
-    me.CP = [random(influnetialPrompts)];
+
+    currentPrompts[0].text = random(influnetialPrompts)
     console.log(response[response.length - 2])
     console.log(response[response.length - 3])
     let y = parseInt(response[response.length - 2].substring(1))
@@ -873,6 +910,7 @@ socket.on("influence", function(input, arr) {
     createEraserButton()
   } else {
     timer = 80;
+    
   }
 
 })
@@ -884,5 +922,7 @@ setInterval(function() {
 }, 1000)
 
 setInterval(function() {
-  storeItem('me', [me, currentRoomCode,response])
+  if (!isHost) {
+    storeItem('me', [me, currentRoomCode, response])
+  }
 }, 1000)

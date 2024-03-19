@@ -78,9 +78,9 @@ io.on("connect", function(socket) {
     io.in(code).emit("room code", code);
 
   })
-  socket.on("save", function(input, code, id, prompts){
+  socket.on("save", function(input, code, id, prompts, isGood){
     console.log(code)
-    io.in(code + " host").emit("input", input, id, prompts)
+    io.in(code + " host").emit("input", input, id, prompts, isGood)
   })
 
   socket.on("can reconect", function(person,code){
@@ -144,6 +144,9 @@ io.on("connect", function(socket) {
   })
   socket.on("show score", function(code){
     io.in(code).emit("score time");
+  })
+  socket.on("Y'all should save", function(code){
+    io.in(code).emit("save now");
   })
   socket.on("player information", function(code, player){
     for(let i = 0; i < rooms.length; i++){

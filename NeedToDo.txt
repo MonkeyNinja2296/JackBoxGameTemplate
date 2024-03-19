@@ -1,2 +1,4 @@
 Reconnecting works
-Correct promt on showing
+Correct prompt on showing
+When person doesn't exist to give image make it not break
+If someone joins mid-game make it not break
