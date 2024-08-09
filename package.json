@@ -1,7 +1,6 @@
 {
   "name": "influence",
   "version": "1.0.0",
-  "description": "",
   "main": "index.js",
   "dependencies": {
     "accepts": "^1.3.8",
@@ -25,7 +24,7 @@
     "engine.io-parser": "^5.0.4",
     "escape-html": "^1.0.3",
     "etag": "^1.8.1",
-    "express": "^4.18.2",
+    "express": "^4.19.2",
     "fetch-blob": "^3.1.5",
     "finalhandler": "^1.2.0",
     "formdata-polyfill": "^4.0.10",
@@ -64,7 +63,7 @@
     "serve-static": "^1.15.0",
     "setprototypeof": "^1.2.0",
     "side-channel": "^1.0.4",
-    "socket.io": "^4.7.4",
+    "socket.io": "^4.7.5",
     "socket.io-adapter": "^2.4.0",
     "socket.io-parser": "^4.2.1",
     "statuses": "^2.0.1",
@@ -89,5 +88,6 @@
   "bugs": {
     "url": "https://github.com/MonkeyNinja2296/JackBoxGameTemplate/issues"
   },
-  "homepage": "https://github.com/MonkeyNinja2296/JackBoxGameTemplate#readme"
+  "homepage": "https://github.com/MonkeyNinja2296/JackBoxGameTemplate#readme",
+  "description": ""
 }
