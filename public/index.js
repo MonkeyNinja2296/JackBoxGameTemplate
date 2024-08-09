@@ -97,7 +97,7 @@ let percentageOfScoreBar = 0;
 let playerOne = null;
 let playerTwo = null;
 
-// Every frame
+// Every frame, I need to make it look better
 async function draw() {
   //background(153);
   let w = width
