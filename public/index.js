@@ -97,7 +97,7 @@ let percentageOfScoreBar = 0;
 let playerOne = null;
 let playerTwo = null;
 
-
+// Every frame
 async function draw() {
   //background(153);
   let w = width
